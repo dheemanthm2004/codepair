@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  name      String?
+  image     String?
+  password  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  hostedRooms Room[] @relation("RoomHost")
+  participatedRooms RoomParticipant[]
+  sessions InterviewSession[]
+}
+
+model Room {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  roomCode    String   @unique
+  title       String?
+  isActive    Boolean  @default(true)
+  maxUsers    Int      @default(2)
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  
+  // Host
+  hostId      String   @db.ObjectId
+  host        User     @relation("RoomHost", fields: [hostId], references: [id])
+  
+  // Participants
+  participants RoomParticipant[]
+  sessions     InterviewSession[]
+  
+  @@map("rooms")
+}
+
+model RoomParticipant {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  roomId   String @db.ObjectId
+  userId   String @db.ObjectId
+  role     String // "interviewer" | "interviewee"
+  joinedAt DateTime @default(now())
+  
+  room     Room @relation(fields: [roomId], references: [id])
+  user     User @relation(fields: [userId], references: [id])
+  
+  @@unique([roomId, userId])
+  @@map("room_participants")
+}
+
+model InterviewSession {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  roomId      String   @db.ObjectId
+  userId      String   @db.ObjectId
+  code        String?
+  language    String   @default("javascript")
+  question    Json?
+  feedback    String?
+  duration    Int?     // in seconds
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  
+  room        Room @relation(fields: [roomId], references: [id])
+  user        User @relation(fields: [userId], references: [id])
+  
+  @@map("interview_sessions")
+}
+
+model Question {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  difficulty  String // "easy" | "medium" | "hard"
+  category    String
+  examples    Json[]
+  constraints String?
+  starterCode Json   // { javascript: "", python: "", etc }
+  solution    Json?  // Optional solutions
+  createdAt   DateTime @default(now())
+  
+  @@map("questions")
+}
