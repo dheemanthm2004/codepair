@@ -26,7 +26,7 @@ import {
   Crown,
   User
 } from 'lucide-react';
-import { RoomParticipant } from '@prisma/client';
+import type { RoomParticipant } from '@/types'; // Adjust the import path if needed
 
 export default function RoomPage() {
   const params = useParams();
